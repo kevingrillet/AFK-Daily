@@ -32,7 +32,7 @@ OPTIONS
 
    -d, --device [DEVICE]
       Specify target device.
-      Values for [DEVICE]: bs (default), dev, nox, memu
+      Values for [DEVICE]: bs (default), nox, memu
 
    -e, --event [EVENT]
       Specify active event.
@@ -59,6 +59,9 @@ OPTIONS
 
 DEV OPTIONS
 
+   -b
+      Dev mode: do not restart adb.
+
    -c, --check
       Check if script is ready to be run.
 
@@ -77,6 +80,9 @@ DEV OPTIONS
          DEBUG >= 3    Show all core functions calls
          DEBUG >= 4    Show all functions calls
          DEBUG >= 9    Show all calls
+
+   -z
+      Disable auto update.
 
 EXAMPLES
    Run script

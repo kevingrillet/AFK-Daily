@@ -28,10 +28,12 @@ noxDirectory="data"
 configFile="config/config.ini"
 tempFile="account-info/acc.ini"
 device="default"
-evt="" # Default dev evt
+evt="hoe" # Default dev evt
 
 # Do not modify
 adb=adb
+devMode=false
+doCheckGitUpdate=true
 forceFightCampaign=false
 forceWeekly=false
 ignoreResolution=false
@@ -81,23 +83,25 @@ checkAdb() {
         else # If not, install it locally for this script
             printWarn "Not found!"
             printTask "Installing adb..."
+            echo
+            echo
             mkdir -p adb       # Create directory
             cd ./adb || exit 1 # Change to new directory
 
             case "$OSTYPE" in # Install depending on installed OS
             "msys")
                 curl -LO https://dl.google.com/android/repository/platform-tools-latest-windows.zip # Windows
-                unzip ./platform-tools-latest-windows.zip                                           # Unzip
+                unzip -qq ./platform-tools-latest-windows.zip                                       # Unzip
                 rm ./platform-tools-latest-windows.zip                                              # Delete .zip
                 ;;
             "darwin")
                 curl -LO https://dl.google.com/android/repository/platform-tools-latest-darwin.zip # MacOS
-                unzip ./platform-tools-latest-darwin.zip                                           # Unzip
+                unzip -qq ./platform-tools-latest-darwin.zip                                       # Unzip
                 rm ./platform-tools-latest-darwin.zip                                              # Delete .zip
                 ;;
             "linux-gnu")
                 curl -LO https://dl.google.com/android/repository/platform-tools-latest-linux.zip # Linux
-                unzip ./platform-tools-latest-linux.zip                                           # Unzip
+                unzip -qq ./platform-tools-latest-linux.zip                                       # Unzip
                 rm ./platform-tools-latest-linux.zip                                              # Delete .zip
                 ;;
             *)
@@ -113,6 +117,7 @@ checkAdb() {
 
             cd .. || exit 1              # Change directory back
             adb=./adb/platform-tools/adb # Set adb path
+            echo
             printSuccess "Installed!"
         fi
     else
@@ -126,14 +131,14 @@ checkAdb() {
 # Description   : Creates a $configFile file if not found
 # ##############################################################################
 checkConfig() {
-    printTask "Searching for $configFile file..."
+    printTask "Searching for ${cCyan}$configFile${cNc}..."
     if [ -f "$configFile" ]; then
         printSuccess "Found!"
     else
         printWarn "Not found!"
-        printTask "Creating new $configFile file..."
+        printTask "Creating new ${cCyan}$configFile${cNc}..."
         printf '# --- CONFIG: Modify accordingly to your game! --- #
-# --- Use this link for help: https://github.com/zebscripts/AFK-Daily#configvariables --- #
+# --- Use this link for help: https://github.com/zebscripts/AFK-Daily/wiki/Config --- #
 
 # Player
 canOpenSoren=false
@@ -164,6 +169,15 @@ buyStoreLimitedDiamOffer=false
 buyWeeklyGuild=false
 buyWeeklyLabyrinth=false
 
+# Towers
+doMainTower=true
+doTowerOfLight=true
+doTheBrutalCitadel=true
+doTheWorldTree=true
+doCelestialSanctum=true
+doTheForsakenNecropolis=true
+doInfernalFortress=true
+
 # --- Actions --- #
 # Campaign
 doLootAfkChest=true
@@ -193,7 +207,7 @@ doCollectMail=true
 doCollectMerchantFreebies=false
 ' >$configFile
         printSuccess "Created!\n"
-        printInfo "Please edit $configFile if necessary and run this script again."
+        printInfo "Please edit ${cCyan}$configFile${cNc} if necessary and run this script again."
         exit
     fi
 
@@ -249,7 +263,7 @@ checkDevice() {
             fi
         elif [ "$1" = "Nox" ]; then # Nox
             printTask "Searching for Nox through ADB..."
-            "$adb" connect localhost:62001 1>/dev/null
+            "$adb" connect localhost:62001 1>/dev/null # If it's not working, try with 127.0.0.1 instead of localhost
             if ! "$adb" get-state 1>/dev/null; then
                 printError "Not found!"
                 exit
@@ -306,23 +320,59 @@ checkEOL() {
 # Description   : Checks for script update (with git)
 # ##############################################################################
 checkGitUpdate() {
-    if command -v git &>/dev/null; then
-        printTask "Checking for updates..."
-        if git pull &>/dev/null; then
-            printSuccess "Checked/Updated!"
-        elif git fetch --all &>/dev/null && git reset --hard origin/master; then
-            printSuccess "Checked/Updated!"
-        else
-            printWarn "Couldn't check for updates. Please do it manually from time to time with 'git pull'."
-            printWarn "Refer to: https://github.com/zebscripts/AFK-Daily#troubleshooting"
-        fi
+    printTask "Checking for updates..."
+
+    # Check if there's a new script version
+    if ./lib/update_git.sh; then
+        printSuccess "Checked/Updated!"
     else
-        printTask "Checking for updates..."
-        if ./lib/update_git.sh; then
-            printSuccess "Checked/Updated!"
+        printSuccess "Update found!"
+
+        # Check if git is installed and there's a .git folder
+        if command -v git &>/dev/null && [ -d "./.git" ]; then
+            # Fetch latest script version
+            git fetch --all &>/dev/null
+
+            # Check if there are local modifications present
+            if [ -n "$(git status --porcelain)" ]; then
+                # Ask if user wants to overwrite local changes
+                if printQuestion "Local changes found! Do you want \
+to overwrite them and get the latest script version? Config files will not be overwritten. (y/n)"; then
+                    git reset --hard origin/master &>/dev/null
+                else
+                    printInfo "Alright, not updating. Use -z flag to not check for updates."
+                    return 0
+                fi
+            fi
+
+            # Update script with git
+            printTask "Updating..."
+            if git pull origin master &>/dev/null; then
+                printSuccess "Updated!"
+            else
+                printError "Failed to update script."
+                printInfo "Refer to: https://github.com/zebscripts/AFK-Daily/wiki/Troubleshooting"
+                if printQuestion "Do you want to run the script regardless? (y/n)"; then return 0; else exit 1; fi
+            fi
+
+            # Force script restart to update correctly
+            printInfo "Please run the script again for changes to take effect."
+            exit 1
         else
-            printWarn "Update found! Please download the last version on github."
-            printWarn "Link: https://github.com/zebscripts/AFK-Daily"
+            # git is not installed/available
+            printWarn "git is not installed/available."
+            printTask "Attempting to auto-update..."
+
+            cd ..
+            curl -sLO https://github.com/zebscripts/AFK-Daily/archive/master.zip
+            unzip -qqo master.zip
+            rm master.zip
+
+            printSuccess "Done!"
+
+            # Force script restart to update correctly
+            printInfo "Please run the script again for changes to take effect."
+            exit 1
         fi
     fi
 }
@@ -334,7 +384,7 @@ checkGitUpdate() {
 checkSetupUpdate() {
     printTask "Checking for setup updates..."
     # .*afkscript.ini
-    for f in .*afkscript.*  ./account-info/acc*.ini; do
+    for f in .*afkscript.* ./account-info/acc*.ini; do
         if [ -e "$f" ]; then
             printInNewLine "$(./lib/update_setup.sh -a)"
             break
@@ -405,7 +455,7 @@ deploy() {
     "$adb" push afk-daily.sh "$2"/scripts/afk-arena 1>/dev/null # Push script to device
     "$adb" push $configFile "$2"/scripts/afk-arena 1>/dev/null  # Push config to device
 
-    args="-d $debug -i $configFile -l $2"
+    args="-v $debug -i $configFile -l $2"
     if [ $forceFightCampaign = true ]; then args="$args -f"; fi
     if [ $forceWeekly = true ]; then args="$args -w"; fi
     if [ $testServer = true ]; then args="$args -t"; fi
@@ -476,7 +526,7 @@ lastWeekly=${newLastWeekly:-$lastWeekly}" >"$tempFile"
 # ##############################################################################
 validateConfig() {
     source $configFile
-    printTask "Validating $configFile..."
+    printTask "Validating ${cCyan}$configFile${cNc}..."
     if [[ -z $canOpenSoren || -z \
         $arenaHeroesOpponent || -z \
         $waitForUpdate || -z \
@@ -496,6 +546,13 @@ validateConfig() {
         $buyStoreLimitedDiamOffer || -z \
         $buyWeeklyGuild || -z \
         $buyWeeklyLabyrinth || -z \
+        $doMainTower || -z \
+        $doTowerOfLight || -z \
+        $doTheBrutalCitadel || -z \
+        $doTheWorldTree || -z \
+        $doCelestialSanctum || -z \
+        $doTheForsakenNecropolis || -z \
+        $doInfernalFortress || -z \
         $doLootAfkChest || -z \
         $doChallengeBoss || -z \
         $doFastRewards || -z \
@@ -517,12 +574,12 @@ validateConfig() {
         $doCollectQuestChests || -z \
         $doCollectMail || -z \
         $doCollectMerchantFreebies ]]; then
-        printError "$configFile has missing/wrong entries."
+        printError "${cCyan}$configFile${cNc} has missing/wrong entries."
         echo
-        printInfo "Please either delete $configFile and run the script again to generate a new one,"
+        printInfo "Please either delete ${cCyan}$configFile${cNc} and run the script again to generate a new one,"
         printInfo "or run ./lib/update_setup.sh -c"
         printInfo "or check the following link for help:"
-        printInfo "https://github.com/zebscripts/AFK-Daily#configvariables"
+        printInfo "https://github.com/zebscripts/AFK-Daily/wiki/Config"
         exit
     fi
     printSuccess "Passed!"
@@ -538,7 +595,7 @@ validateConfig() {
 check_all() {
     checkFolders
     checkAdb
-    checkGitUpdate
+    if [ $doCheckGitUpdate = true ]; then checkGitUpdate; fi
     checkSetupUpdate
     checkConfig
     checkEOL $tempFile
@@ -554,22 +611,20 @@ run() {
     check_all
     getLatestPatch
 
-    if [ "$device" == "Bluestacks" ]; then
+    if [ "$devMode" = false ]; then
         restartAdb
+    fi
+
+    if [ "$device" == "Bluestacks" ]; then
         checkDevice "Bluestacks"
         deploy "Bluestacks" "$bluestacksDirectory"
     elif [ "$device" == "Memu" ]; then
-        restartAdb
         checkDevice "Memu"
         deploy "Memu" "$memuDirectory"
     elif [ "$device" == "Nox" ]; then
-        restartAdb
         checkDevice "Nox"
         deploy "Nox" "$noxDirectory"
-    elif [ "$device" == "dev" ]; then
-        checkDevice
     else
-        restartAdb
         checkDevice
     fi
 }
@@ -601,7 +656,7 @@ show_help() {
     echo -e
     echo -e "   ${cCyan}-d${cWhite}, ${cCyan}--device${cWhite} ${cGreen}[DEVICE]${cWhite}"
     echo -e "      Specify target device."
-    echo -e "      Values for ${cGreen}[DEVICE]${cWhite}: bs (default), dev, nox, memu"
+    echo -e "      Values for ${cGreen}[DEVICE]${cWhite}: bs (default), nox, memu"
     echo -e
     echo -e "   ${cCyan}-e${cWhite}, ${cCyan}--event${cWhite} ${cGreen}[EVENT]${cWhite}"
     echo -e "      Specify active event."
@@ -628,6 +683,9 @@ show_help() {
     echo -e
     echo -e "DEV OPTIONS"
     echo -e
+    echo -e "   ${cCyan}-b${cWhite}"
+    echo -e "      Dev mode: do not restart adb."
+    echo -e
     echo -e "   ${cCyan}-c${cWhite}, ${cCyan}--check${cWhite}"
     echo -e "      Check if script is ready to be run."
     echo -e
@@ -647,6 +705,9 @@ show_help() {
     echo -e "         DEBUG >= 4    Show all functions calls"
     echo -e "         DEBUG >= 9    Show all calls"
     echo -e
+    echo -e "   ${cCyan}-z${cWhite}"
+    echo -e "      Disable auto update."
+    echo -e
     echo -e "EXAMPLES"
     echo -e "   Run script"
     echo -e "      ${cYellow}./deploy.sh${cWhite}"
@@ -659,6 +720,9 @@ show_help() {
     echo -e
     echo -e "   Run script forcing fight & weekly"
     echo -e "      ${cYellow}./deploy.sh${cWhite} ${cCyan}-fw${cWhite}"
+    echo -e
+    echo -e "   Run script with custom config.ini file"
+    echo -e "      ${cYellow}./deploy.sh${cWhite} ${cCyan}-i towers${cWhite}"
     echo -e
     echo -e "   Run script for color testing"
     echo -e "      ${cYellow}./deploy.sh${cWhite} ${cCyan}-s${cWhite} ${cGreen}800,600${cWhite}"
@@ -691,10 +755,13 @@ for arg in "$@"; do
     esac
 done
 
-while getopts ":a:cd:e:fhi:no:rs:tv:w" option; do
+while getopts ":a:bcd:e:fhi:no:rs:tv:wz" option; do
     case $option in
     a)
         tempFile="account-info/acc-${OPTARG}.ini"
+        ;;
+    b)
+        devMode=true
         ;;
     c)
         check_all
@@ -712,8 +779,6 @@ while getopts ":a:cd:e:fhi:no:rs:tv:w" option; do
                 printError "nox_adb.exe not found, please check your Nox settings"
                 exit 1
             fi
-        elif [ "$OPTARG" == "dev" ]; then
-            device="dev"
         fi
         ;;
     e)
@@ -749,6 +814,9 @@ while getopts ":a:cd:e:fhi:no:rs:tv:w" option; do
         ;;
     w)
         forceWeekly=true
+        ;;
+    z)
+        doCheckGitUpdate=false
         ;;
     :)
         printWarn "Argument required by this option: $OPTARG"

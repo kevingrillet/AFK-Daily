@@ -2,8 +2,8 @@
 # ##############################################################################
 # Script Name   : afk-daily.sh
 # Description   : Script automating daily
-# Args          : [-d DEVICE] [-e EVENT] [-f] [-i INI] [-l LOCATION]
-#                 [-s TOTEST] [-t] [-w]
+# Args          : [-e EVENT] [-f] [-i INI] [-l LOCATION]
+#                 [-s TOTEST] [-t] [-v DEBUG] [-w]
 # GitHub        : https://github.com/zebscripts/AFK-Daily
 # License       : MIT
 # ##############################################################################
@@ -50,21 +50,18 @@ cBlue="\033[0;94m"   # Values
 cPurple="\033[0;95m" # [DEBUG]
 cCyan="\033[0;96m"   # [INFO]
 
-while getopts "d:e:fi:l:s:tw" opt; do
+while getopts "e:fi:l:s:tv:w" opt; do
     case $opt in
-    d)
-        DEBUG=$OPTARG
-        ;;
     e)
-        buIFS=IFS
+        buIFS=$IFS
         # Explication: https://stackoverflow.com/a/7718539/7295428
         IFS=','
         for i in $OPTARG; do
-            if [ "$i" = "hoe" ]; then
-                eventHoe=true
-            fi
+            case "$i" in
+            "hoe") eventHoe=true;;
+            esac
         done
-        IFS=buIFS
+        IFS=$buIFS
         ;;
     f)
         forceFightCampaign=true
@@ -81,6 +78,9 @@ while getopts "d:e:fi:l:s:tw" opt; do
         ;;
     t)
         testServer=true
+        ;;
+    v)
+        DEBUG=$OPTARG
         ;;
     w)
         forceWeekly=true
@@ -634,7 +634,7 @@ challengeBoss() {
 
     if [ "$forceFightCampaign" = "true" ]; then # Fight battle or not
         # Fight in the campaign because of Mythic Trick
-        printInColor "INFO" "Fighting in the campaign ${cCyan}$maxCampaignFights${cNc} time(s) because of Mythic Trick."
+        printInColor "INFO" "Fighting in the campaign until ${cCyan}$maxCampaignFights${cNc} defeat(s) because of Mythic Trick."
         _challengeBoss_LOOSE=0
         _challengeBoss_WIN=0
 
@@ -968,35 +968,40 @@ arenaOfHeroes_tapClosestOpponent() {
 kingsTower() {
     if [ "$DEBUG" -ge 4 ]; then printInColor "DEBUG" "kingsTower" >&2; fi
     inputTapSleep 500 870 5 # King's Tower
+    printInColor "INFO" "Fighting King's Tower until ${cCyan}$maxKingsTowerFights${cNc} defeat(s)."
 
     if testColorOR 550 150 1a1212; then
         # King's Tower without Towers of Esperia unlocked (between stage 2-12 and 15-1)
-        printInColor "INFO" "Main Tower $(kingsTower_battle -1 -1)" # Main Tower
+        if [ "$doMainTower" = true ]; then
+            printInColor "INFO" "Main Tower $(kingsTower_battle -1 -1)" # Main Tower
+        fi
     else
         # King's Tower with Towers of Esperia unlocked (after stage 15-1)
-        printInColor "INFO" "Main Tower $(kingsTower_battle 550 800)" # Main Tower
+        if [ "$doMainTower" = true ]; then
+            printInColor "INFO" "Main Tower $(kingsTower_battle 550 800)" # Main Tower
+        fi
 
-        if [ "$dayofweek" -eq 1 ] || [ "$dayofweek" -eq 5 ] || [ "$dayofweek" -eq 7 ]; then
+        if [ "$doTowerOfLight" = true ] && { [ "$dayofweek" -eq 1 ] || [ "$dayofweek" -eq 5 ] || [ "$dayofweek" -eq 7 ]; }; then
             printInColor "INFO" "Tower of Light $(kingsTower_battle 300 950)" # Tower of Light
         fi
 
-        if [ "$dayofweek" -eq 2 ] || [ "$dayofweek" -eq 5 ] || [ "$dayofweek" -eq 7 ]; then
+        if [ "$doTheBrutalCitadel" = true ] && { [ "$dayofweek" -eq 2 ] || [ "$dayofweek" -eq 5 ] || [ "$dayofweek" -eq 7 ]; }; then
             printInColor "INFO" "The Brutal Citadel $(kingsTower_battle 400 1250)" # The Brutal Citadel
         fi
 
-        if [ "$dayofweek" -eq 3 ] || [ "$dayofweek" -eq 6 ] || [ "$dayofweek" -eq 7 ]; then
+        if [ "$doTheWorldTree" = true ] && { [ "$dayofweek" -eq 3 ] || [ "$dayofweek" -eq 6 ] || [ "$dayofweek" -eq 7 ]; }; then
             printInColor "INFO" "The World Tree $(kingsTower_battle 750 660)" # The World Tree
         fi
 
-        if [ "$dayofweek" -eq 3 ] || [ "$dayofweek" -eq 5 ] || [ "$dayofweek" -eq 7 ]; then
+        if [ "$doCelestialSanctum" = true ] && { [ "$dayofweek" -eq 3 ] || [ "$dayofweek" -eq 5 ] || [ "$dayofweek" -eq 7 ]; }; then
             printInColor "INFO" "Celestial Sanctum $(kingsTower_battle 270 500)" # Celestial Sanctum
         fi
 
-        if [ "$dayofweek" -eq 4 ] || [ "$dayofweek" -eq 6 ] || [ "$dayofweek" -eq 7 ]; then
+        if [ "$doTheForsakenNecropolis" = true ] && { [ "$dayofweek" -eq 4 ] || [ "$dayofweek" -eq 6 ] || [ "$dayofweek" -eq 7 ]; }; then
             printInColor "INFO" "The Forsaken Necropolis $(kingsTower_battle 780 1100)" # The Forsaken Necropolis
         fi
 
-        if [ "$dayofweek" -eq 4 ] || [ "$dayofweek" -eq 6 ] || [ "$dayofweek" -eq 7 ]; then
+        if [ "$doInfernalFortress" = true ] && { [ "$dayofweek" -eq 4 ] || [ "$dayofweek" -eq 6 ] || [ "$dayofweek" -eq 7 ]; }; then
             printInColor "INFO" "Infernal Fortress $(kingsTower_battle 620 1550)" # Infernal Fortress
         fi
     fi
@@ -1434,7 +1439,7 @@ nobleTavern() {
 # ##############################################################################
 oakInnSpeedy() {
     if [ "$DEBUG" -ge 4 ]; then printInColor "DEBUG" "oakInn" >&2; fi
-    inputTapSleep 780 270 5 # Oak Inn
+    inputTapSleep 670 320 5 # Oak Inn
     printInColor "INFO" "Searching for presents to collect..."
     _oakInn_COUNT=0
     _oakInn_COLLECTED=0
@@ -1617,6 +1622,8 @@ checkWhereToEnd() {
 collectQuestChests() {
     if [ "$DEBUG" -ge 4 ]; then printInColor "DEBUG" "collectQuestChests" >&2; fi
     # WARN: May break because "some resources have exceeded their maximum limit"
+    # WARN: This actually happened to me today, and the script handled it well, as it thought it had one more chest to collect
+    # WARN: and closed the warning message. Might not be a problem anymore.
     inputTapSleep 960 250 # Quests
     collectQuestChests_quick
 
@@ -1645,24 +1652,24 @@ collectQuestChests_quick() {
     done
 
     if testColorNAND -d "$DEFAULT_DELTA" 265 450 4b2711 && testColorNAND 295 410 71211e; then # OFF: 4b2711 COLLECTED: 71211e
-        inputTapSleep 330 430   # Chest 20
-        inputTapSleep 580 600 0 # Collect
+        inputTapSleep 330 430                                                                 # Chest 20
+        inputTapSleep 580 600 0                                                               # Collect
     fi
     if testColorNAND -d "$DEFAULT_DELTA" 430 450 552813 && testColorNAND 460 410 ad2c27; then # OFF: 552813 COLLECTED: ad2c27
-        inputTapSleep 500 430   # Chest 40
-        inputTapSleep 580 600 0 # Collect
+        inputTapSleep 500 430                                                                 # Chest 40
+        inputTapSleep 580 600 0                                                               # Collect
     fi
     if testColorNAND -d "$DEFAULT_DELTA" 595 450 4e2713 && testColorNAND 625 410 8f2d28; then # OFF: 4e2713 COLLECTED: 8f2d28
-        inputTapSleep 660 430   # Chest 60
-        inputTapSleep 580 600 0 # Collect
+        inputTapSleep 660 430                                                                 # Chest 60
+        inputTapSleep 580 600 0                                                               # Collect
     fi
     if testColorNAND -d "$DEFAULT_DELTA" 760 450 502611 && testColorNAND 785 410 c21c22; then # OFF: 502611 COLLECTED: c21c22
-        inputTapSleep 830 430   # Chest 80
-        inputTapSleep 580 600 0 # Collect
+        inputTapSleep 830 430                                                                 # Chest 80
+        inputTapSleep 580 600 0                                                               # Collect
     fi
     if testColorNAND -d "$DEFAULT_DELTA" 920 450 662611 && testColorNAND 950 410 6e1819; then # OFF: 662611 COLLECTED: 6e1819
-        inputTapSleep 990 430 # Chest 100
-        inputTapSleep 580 600 # Collect
+        inputTapSleep 990 430                                                                 # Chest 100
+        inputTapSleep 580 600                                                                 # Collect
     fi
 }
 
