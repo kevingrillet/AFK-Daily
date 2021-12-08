@@ -62,7 +62,7 @@ while getopts "ce:fi:l:s:tv:w" opt; do
         IFS=','
         for i in $OPTARG; do
             case "$i" in
-            "hoe") eventHoe=true;;
+            "hoe") eventHoe=true ;;
             esac
         done
         IFS=$buIFS
@@ -1125,6 +1125,7 @@ legendsTournament() {
             inputTapSleep 550 800 4 # Tap anywhere to close
         else
             printInColor "WARN" "Failed to enter battle at the Legends Tournament."
+            inputTapSleep 70 1810
         fi
         totalAmountTournamentTries=$((totalAmountTournamentTries - 1)) # Dicrement
     done
@@ -1503,7 +1504,7 @@ strengthenCrystal() {
     else
         printInColor "INFO" "Not necessary to strengthen the resonating Crystal."
     fi
-    verifyHEX 20 1775 d49a61 "Strenghened resonating Crystal." "Failed to Strenghen Resonating Crystal."
+    verifyHEX 20 1775 d49a61 "Strengthened resonating Crystal." "Failed to Strenghen Resonating Crystal."
 }
 
 # ##############################################################################
@@ -1541,11 +1542,16 @@ twistedRealmBoss() {
     # inputTapSleep 380 360 10
     ## End of testing ##
 
-    inputTapSleep 820 820 # Twisted Realm
+    inputTapSleep 820 820 2 # Twisted Realm
 
     if testColorOR 540 1220 9aedc1; then # Check if TR is being calculated
         printInColor "INFO" "Unable to fight in the Twisted Realm because it's being calculated." >&2
     else
+        # Check for cursed realm screen
+        if testColorOR 750 100 1c2d3e; then
+            inputTapSleep 550 700 2 # Twisted Realm
+        fi
+
         printInColor "INFO" "Fighting Twisted Realm Boss ${cCyan}$totalAmountTwistedRealmBossTries${cNc} time(s)."
         until [ "$totalAmountTwistedRealmBossTries" -le 0 ]; do
             inputTapSleep 550 1850               # Challenge
@@ -1718,8 +1724,8 @@ collectMerchants() {
     fi
     inputTapSleep 550 300 1 # Collect rewards
 
-    if testColorOR -d "$DEFAULT_DELTA" 430 1530 e51f06; then # Check if red mark - Weekly Deals
-        inputTapSleep 280 1620 1                             # Weekly Deals
+    if testColorOR -d "$DEFAULT_DELTA" 432 1525 f01d04; then # Check if red mark - Weekly Deals
+        inputTapSleep 370 1620 1                             # Weekly Deals
         if testColorNAND 375 940 050a0f; then                # Checks for Special Weekly Bundles
             inputTapSleep 200 1200 1                         # Free
         else
@@ -1730,8 +1736,8 @@ collectMerchants() {
         printInColor "INFO" "No weekly reward to collect."
     fi
 
-    if testColorOR -d "$DEFAULT_DELTA" 610 1530 ed2102; then # Check if red mark - Monthly Deals
-        inputTapSleep 460 1620 1                             # Monthly Deals
+    if testColorOR -d "$DEFAULT_DELTA" 607 1525 f21e05; then # Check if red mark - Monthly Deals
+        inputTapSleep 545 1620 1                             # Monthly Deals
         if testColorNAND 375 940 0b080a; then                # Checks for Special Monthly Bundles
             inputTapSleep 200 1200 1                         # Free
         else
