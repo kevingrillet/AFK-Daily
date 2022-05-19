@@ -2,7 +2,7 @@
 # ##############################################################################
 # Script Name   : afk-daily.sh
 # Description   : Script automating daily
-# Args          : [-c] [-e EVENT] [-f] [-i INI] [-l LOCATION]
+# Args          : [-c] [-e EVENT] [-f] [-g] [-i INI] [-l LOCATION]
 #                 [-s TOTEST] [-t] [-v DEBUG] [-w]
 # GitHub        : https://github.com/zebscripts/AFK-Daily
 # License       : MIT
@@ -41,6 +41,7 @@ screenshotRequired=true
 testServer=false
 SCREENSHOTLOCATION="/storage/emulated/0/scripts/afk-arena/screen.dump"
 withColors=true
+hexdumpSu=false
 
 # Colors
 cNc="\033[0m"        # Text Reset
@@ -51,7 +52,7 @@ cBlue="\033[0;94m"   # Values
 cPurple="\033[0;95m" # [DEBUG]
 cCyan="\033[0;96m"   # [INFO]
 
-while getopts "ce:fi:l:s:tv:w" opt; do
+while getopts "ce:fgi:l:s:tv:w" opt; do
     case $opt in
     c)
         withColors=false
@@ -69,6 +70,9 @@ while getopts "ce:fi:l:s:tv:w" opt; do
         ;;
     f)
         forceFightCampaign=true
+        ;;
+    g)
+        hexdumpSu=true
         ;;
     i)
         INIFILE="${OPTARG#config/}"
@@ -320,7 +324,11 @@ printInColor() {
 # ##############################################################################
 readHEX() {
     offset=$((DEVICEWIDTH * $2 + $1 + 3))
-    HEX=$(dd if="$SCREENSHOTLOCATION" bs=4 skip="$offset" count=1 2>/dev/null | hexdump -C)
+    if [ "$hexdumpSu" = true ]; then
+        HEX=$(dd if="$SCREENSHOTLOCATION" bs=4 skip="$offset" count=1 2>/dev/null | su -c hexdump -C)
+    else
+        HEX=$(dd if="$SCREENSHOTLOCATION" bs=4 skip="$offset" count=1 2>/dev/null | hexdump -C)
+    fi
     HEX=${HEX:9:9}
     HEX="${HEX// /}"
 }
@@ -537,6 +545,7 @@ switchTab() {
             [ "$doFastRewards" = true ] ||
             [ "$doCollectFriendsAndMercenaries" = true ] ||
             [ "$doLootAfkChest" = true ]; then
+            inputTapSleep 550 1850 2
             inputTapSleep 550 1850
             activeTab="$1"
             verifyHEX 450 1775 cc9261 "Switched to the Campaign Tab." "Failed to switch to the Campaign Tab."
@@ -549,6 +558,7 @@ switchTab() {
             [ "$doArenaOfHeroes" = true ] ||
             [ "$doLegendsTournament" = true ] ||
             [ "$doKingsTower" = true ]; then
+            inputTapSleep 300 1850 2
             inputTapSleep 300 1850
             activeTab="$1"
             verifyHEX 240 1775 d49a61 "Switched to the Dark Forest Tab." "Failed to switch to the Dark Forest Tab."
@@ -566,6 +576,7 @@ switchTab() {
             [ "$doCollectQuestChests" = true ] ||
             [ "$doCollectMail" = true ] ||
             [ "$doCollectMerchantFreebies" = true ]; then
+            inputTapSleep 110 1850 2
             inputTapSleep 110 1850
             activeTab="$1"
             verifyHEX 20 1775 d49a61 "Switched to the Ranhorn Tab." "Failed to switch to the Ranhorn Tab."
@@ -981,36 +992,36 @@ kingsTower() {
     if testColorOR 550 150 1a1212; then
         # King's Tower without Towers of Esperia unlocked (between stage 2-12 and 15-1)
         if [ "$doMainTower" = true ]; then
-            printInColor "INFO" "Main Tower $(kingsTower_battle -1 -1)" # Main Tower
+            printInColor "DONE" "Main Tower $(kingsTower_battle -1 -1)" # Main Tower
         fi
     else
         # King's Tower with Towers of Esperia unlocked (after stage 15-1)
         if [ "$doMainTower" = true ]; then
-            printInColor "INFO" "Main Tower $(kingsTower_battle 550 800)" # Main Tower
+            printInColor "DONE" "Main Tower $(kingsTower_battle 550 800)" # Main Tower
         fi
 
         if [ "$doTowerOfLight" = true ] && { [ "$dayofweek" -eq 1 ] || [ "$dayofweek" -eq 5 ] || [ "$dayofweek" -eq 7 ]; }; then
-            printInColor "INFO" "Tower of Light $(kingsTower_battle 300 950)" # Tower of Light
+            printInColor "DONE" "Tower of Light $(kingsTower_battle 300 950)" # Tower of Light
         fi
 
         if [ "$doTheBrutalCitadel" = true ] && { [ "$dayofweek" -eq 2 ] || [ "$dayofweek" -eq 5 ] || [ "$dayofweek" -eq 7 ]; }; then
-            printInColor "INFO" "The Brutal Citadel $(kingsTower_battle 400 1250)" # The Brutal Citadel
+            printInColor "DONE" "The Brutal Citadel $(kingsTower_battle 400 1250)" # The Brutal Citadel
         fi
 
         if [ "$doTheWorldTree" = true ] && { [ "$dayofweek" -eq 3 ] || [ "$dayofweek" -eq 6 ] || [ "$dayofweek" -eq 7 ]; }; then
-            printInColor "INFO" "The World Tree $(kingsTower_battle 750 660)" # The World Tree
+            printInColor "DONE" "The World Tree $(kingsTower_battle 750 660)" # The World Tree
         fi
 
         if [ "$doCelestialSanctum" = true ] && { [ "$dayofweek" -eq 3 ] || [ "$dayofweek" -eq 5 ] || [ "$dayofweek" -eq 7 ]; }; then
-            printInColor "INFO" "Celestial Sanctum $(kingsTower_battle 270 500)" # Celestial Sanctum
+            printInColor "DONE" "Celestial Sanctum $(kingsTower_battle 270 500)" # Celestial Sanctum
         fi
 
         if [ "$doTheForsakenNecropolis" = true ] && { [ "$dayofweek" -eq 4 ] || [ "$dayofweek" -eq 6 ] || [ "$dayofweek" -eq 7 ]; }; then
-            printInColor "INFO" "The Forsaken Necropolis $(kingsTower_battle 780 1100)" # The Forsaken Necropolis
+            printInColor "DONE" "The Forsaken Necropolis $(kingsTower_battle 780 1100)" # The Forsaken Necropolis
         fi
 
         if [ "$doInfernalFortress" = true ] && { [ "$dayofweek" -eq 4 ] || [ "$dayofweek" -eq 6 ] || [ "$dayofweek" -eq 7 ]; }; then
-            printInColor "INFO" "Infernal Fortress $(kingsTower_battle 620 1550)" # Infernal Fortress
+            printInColor "DONE" "Infernal Fortress $(kingsTower_battle 620 1550)" # Infernal Fortress
         fi
     fi
 
@@ -1205,7 +1216,8 @@ buyFromStore() {
     if [ "$buyStoreAmplifyingEmblem" = true ] && testColorOR -d "$DEFAULT_DELTA" 175 1690 c59e71 cca67a; then
         buyFromStore_buyItem 175 1690
     fi
-    if [ "$buyStoreSoulstone" = true ]; then                     # Soulstone (widh 90 diamonds)
+    # Soulstone (widh 90 diamonds)
+    if [ "$buyStoreSoulstone" = true ]; then
         if testColorOR -d "$DEFAULT_DELTA" 910 1100 cf9ced; then # row 1, item 4
             buyFromStore_buyItem 910 1100
         fi
@@ -1213,11 +1225,17 @@ buyFromStore() {
             buyFromStore_buyItem 650 1100
         fi
     fi
-    if [ "$buyStoreLimitedGoldOffer" = true ]; then # Limited Gold Offer
-        buyFromStore_buyItem 420 820
+    # Limited Elemental Shard
+    if [ "$buyStoreLimitedElementalShard" = true ]; then
+        buyFromStore_buyItem 300 820
     fi
-    if [ "$buyStoreLimitedDiamOffer" = true ]; then # Limited Diam Offer
-        buyFromStore_buyItem 670 820
+    # Limited Elemental Core
+    if [ "$buyStoreLimitedElementalCore" = true ]; then
+        buyFromStore_buyItem 540 820
+    fi
+    # Limited Time Emblem
+    if [ "$buyStoreLimitedTimeEmblem" = true ]; then
+        buyFromStore_buyItem 780 820
     fi
     if [ "$forceWeekly" = true ]; then
         # Weekly - Purchase an item from the Guild Store once (check red dot first row for most useful item)
@@ -1238,19 +1256,23 @@ buyFromStore() {
         if [ "$buyWeeklyLabyrinth" = true ]; then
             inputTapSleep 1020 1810          # Labyrinth Store
             inputSwipe 1050 1600 1050 750 50 # Swipe all the way down
-            sleep 2
-            if testColorOR -d "$DEFAULT_DELTA" 950 1570 2a2b64; then # row 6, item 4 >  60 Rare Hero Soulstone / 2400 Labyrinth Tokens
-                buyFromStore_buyItem 900 1620
-            elif testColorOR -d "$DEFAULT_DELTA" 710 1570 272861; then # row 6, item 3 >  60 Rare Hero Soulstone / 2400 Labyrinth Tokens
-                buyFromStore_buyItem 660 1620
-            elif testColorOR -d "$DEFAULT_DELTA" 465 1570 282962; then # row 6, item 2 >  60 Rare Hero Soulstone / 2400 Labyrinth Tokens
-                buyFromStore_buyItem 420 1620
-            elif testColorOR -d "$DEFAULT_DELTA" 220 1570 292a63; then # row 6, item 1 >  60 Rare Hero Soulstone / 2400 Labyrinth Tokens
-                buyFromStore_buyItem 180 1620
-            elif testColorOR -d "$DEFAULT_DELTA" 950 1280 292a63; then # row 5, item 4 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
-                buyFromStore_buyItem 900 1330
-            elif testColorOR -d "$DEFAULT_DELTA" 710 1280 272861; then # row 5, item 3 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
-                buyFromStore_buyItem 660 1330
+            wait
+            if testColorOR -d "$DEFAULT_DELTA" 180 1350 0c8bbd; then # row 5, item 1 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
+                buyFromStore_buyItem 180 1350
+            elif testColorOR -d "$DEFAULT_DELTA" 420 1350 2a99cc; then # row 5, item 2 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
+                buyFromStore_buyItem 420 1350
+            elif testColorOR -d "$DEFAULT_DELTA" 660 1350 81938e; then # row 5, item 3 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
+                buyFromStore_buyItem 660 1350
+            elif testColorOR -d "$DEFAULT_DELTA" 900 1350 f9f9fb; then # row 5, item 4 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
+                buyFromStore_buyItem 900 1350
+            elif testColorOR -d "$DEFAULT_DELTA" 180 1600 2b2c4a; then # row 6, item 1 >  60 Soulstones (Ira) / 2400 Labyrinth Tokens
+                buyFromStore_buyItem 180 1600
+            elif testColorOR -d "$DEFAULT_DELTA" 420 1600 3d2f30; then # row 6, item 2 >  60 Soulstones (Golus) / 2400 Labyrinth Tokens
+                buyFromStore_buyItem 420 1600
+            elif testColorOR -d "$DEFAULT_DELTA" 660 1600 1b151a; then # row 6, item 3 >  60 Soulstones (Mirael) / 2400 Labyrinth Tokens
+                buyFromStore_buyItem 660 1600
+            elif testColorOR -d "$DEFAULT_DELTA" 900 1600 999f9f; then # row 6, item 4 >  60 Soulstones (Silvina) / 2400 Labyrinth Tokens
+                buyFromStore_buyItem 900 1600
             else
                 printInColor "INFO" "Can't buy item from Labyrinth store"
             fi
@@ -1324,18 +1346,22 @@ buyFromStore_test() {
             inputTapSleep 1020 1810          # Labyrinth Store
             inputSwipe 1050 1600 1050 750 50 # Swipe all the way down
             wait
-            if testColorOR -d "$DEFAULT_DELTA" 900 1500 36bae4; then # row 6, item 4 >  60 Rare Hero Soulstone / 2400 Labyrinth Tokens
-                buyFromStore_buyItem 900 1500
-            elif testColorOR -d "$DEFAULT_DELTA" 660 1500 7fd1e7; then # row 6, item 3 >  60 Rare Hero Soulstone / 2400 Labyrinth Tokens
-                buyFromStore_buyItem 660 1500
-            elif testColorOR -d "$DEFAULT_DELTA" 420 1500 91abac; then # row 6, item 2 >  60 Rare Hero Soulstone / 2400 Labyrinth Tokens
-                buyFromStore_buyItem 420 1500
-            elif testColorOR -d "$DEFAULT_DELTA" 180 1500 8fdbf4; then # row 6, item 1 >  60 Rare Hero Soulstone / 2400 Labyrinth Tokens
-                buyFromStore_buyItem 180 1500
-            elif testColorOR -d "$DEFAULT_DELTA" 900 1200 88d8ff; then # row 5, item 4 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
-                buyFromStore_buyItem 900 1200
-            elif testColorOR -d "$DEFAULT_DELTA" 660 1200 67d2fc; then # row 5, item 3 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
-                buyFromStore_buyItem 660 1200
+            if testColorOR -d "$DEFAULT_DELTA" 180 1350 0c8bbd; then # row 5, item 1 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
+                buyFromStore_buyItem 180 1350
+            elif testColorOR -d "$DEFAULT_DELTA" 420 1350 2a99cc; then # row 5, item 2 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
+                buyFromStore_buyItem 420 1350
+            elif testColorOR -d "$DEFAULT_DELTA" 660 1350 8ca5a3; then # row 5, item 3 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
+                buyFromStore_buyItem 660 1350
+            elif testColorOR -d "$DEFAULT_DELTA" 900 1350 f9f9fb; then # row 5, item 4 > 120 Rare Hero Soulstone / 4800 Labyrinth Tokens
+                buyFromStore_buyItem 900 1350
+            elif testColorOR -d "$DEFAULT_DELTA" 180 1600 2b2c4a; then # row 6, item 1 >  60 Soulstones (Ira) / 2400 Labyrinth Tokens
+                buyFromStore_buyItem 180 1600
+            elif testColorOR -d "$DEFAULT_DELTA" 420 1600 3d2f30; then # row 6, item 2 >  60 Soulstones (Golus) / 2400 Labyrinth Tokens
+                buyFromStore_buyItem 420 1600
+            elif testColorOR -d "$DEFAULT_DELTA" 660 1600 1b151a; then # row 6, item 3 >  60 Soulstones (Mirael) / 2400 Labyrinth Tokens
+                buyFromStore_buyItem 660 1600
+            elif testColorOR -d "$DEFAULT_DELTA" 900 1600 999f9f; then # row 6, item 4 >  60 Soulstones (Silvina) / 2400 Labyrinth Tokens
+                buyFromStore_buyItem 900 1600
             else
                 printInColor "INFO" "Can't buy item from Labyrinth store"
             fi
@@ -1425,7 +1451,7 @@ guildHunts_quickBattle() {
 nobleTavern() {
     if [ "$DEBUG" -ge 4 ]; then printInColor "DEBUG" "nobleTavern" >&2; fi
     inputTapSleep 280 1370 3 # The Noble Tavern
-    inputTapSleep 600 1820 1 # The noble tavern again
+    inputTapSleep 400 1820 1 # The noble tavern again
 
     #until testColorOR 890 850 f4e38e; do       # Looking for heart
     until testColorOR -d "$DEFAULT_DELTA" 875 835 f39067; do # Looking for heart, old value: fc9473 (d=4)
@@ -1447,35 +1473,46 @@ nobleTavern() {
 # Concept       : https://github.com/Fortigate/AFK-Daily/blob/master/deploy.sh > collectInnGifts()
 # ##############################################################################
 oakInnSpeedy() {
-    if [ "$DEBUG" -ge 4 ]; then printInColor "DEBUG" "oakInn" >&2; fi
+    if [ "$DEBUG" -ge 4 ]; then printInColor "DEBUG" "oakInnSpeedy" >&2; fi
     inputTapSleep 670 320 5 # Oak Inn
     printInColor "INFO" "Searching for presents to collect..."
-    _oakInn_COUNT=0
-    _oakInn_COLLECTED=0
-    until [ "$_oakInn_COLLECTED" -ge "$totalAmountOakRewards" ] || [ "$_oakInn_COUNT" -ge $((totalAmountOakRewards * 10)) ]; do
-        _oakInn_ROW_COUNT=0
-        screenshotRequired=true
-        until [ "$_oakInn_ROW_COUNT" -ge 100 ]; do
-            if testColorOR -d 3 $((250 + _oakInn_ROW_COUNT * 5)) 1330 9b3e28 932017 e7af65 8d2911 ffd885; then
-                inputTapSleep $((250 + _oakInn_ROW_COUNT * 5)) 1330 2 # Tap present
-                if testColorOR 250 1200 eaddb8; then
-                    inputTapSleep 540 1650 1                     # Ok
-                    inputTapSleep 540 1650 .5                    # Collect reward
-                    _oakInn_COLLECTED=$((_oakInn_COLLECTED + 1)) # Increment
-                    break
-                fi
-            fi
-            _oakInn_ROW_COUNT=$((_oakInn_ROW_COUNT + 1)) # Increment
-        done
-        _oakInn_COUNT=$((_oakInn_COUNT + 1)) # Increment
-    done
 
+    _oakInn_TRIES=0
+    _oakInn_TRIES_MAX=3
+    _oakInn_X_START=230
+    _oakInn_X_END=855
+    until [ "$_oakInn_TRIES" -ge "$_oakInn_TRIES_MAX" ]; do
+        until [ "$_oakInn_X_START" -ge "$_oakInn_X_END" ]; do
+            # Tap on X coord to possibly collect present
+            input tap "$_oakInn_X_START" 1350
+            sleep 2
+
+            # Check if tapped on present
+            if testColorNAND 955 1235 271616; then
+                inputTapSleep 540 1650 1  # Ok
+                inputTapSleep 540 1650 .5 # Collect reward
+                printInColor "INFO" "Collected presents at the Oak Inn."
+                break 2
+            fi
+
+            # Increment
+            _oakInn_X_START=$((_oakInn_X_START + 70))
+        done
+
+        _oakInn_X_START=230                  # Reset
+        _oakInn_TRIES=$((_oakInn_TRIES + 1)) # Increment
+
+        # If no present collected, warn user
+        if [ "$_oakInn_TRIES" -ge "$_oakInn_TRIES_MAX" ]; then
+            printInColor "WARN" "No presents collected at the Oak Inn."
+        fi
+    done
     inputTapSleep 70 1810 0
 
     wait
     verifyHEX 20 1775 d49a61 \
-        "Attempted to collect Oak Inn presents. [${cCyan}$_oakInn_COLLECTED${cNc}]" \
-        "Failed to collect Oak Inn presents. [${cCyan}$_oakInn_COLLECTED${cNc}]"
+        "Attempted to collect Oak Inn presents." \
+        "Failed to collect Oak Inn presents."
 }
 
 # ##############################################################################
@@ -1513,19 +1550,19 @@ strengthenCrystal() {
 # ##############################################################################
 templeOfAscension() {
     if [ "$DEBUG" -ge 4 ]; then printInColor "DEBUG" "templeOfAscension" >&2; fi
-    if testColorOR -d "$DEFAULT_DELTA" 450 1050 fe1c0c; then # If red circle
+    if testColorOR -d "$DEFAULT_DELTA" 450 1050 ff1706; then # If red circle
         inputTapSleep 280 960                                # Temple Of Ascension
         inputTapSleep 900 1800                               # Auto Ascend
         inputTapSleep 550 1460                               # Confirm
         inputTapSleep 550 1810                               # Close
         inputTapSleep 70 1810                                # Exit
+
+        inputTapSleep 70 1810 # Exit
+        wait
+        verifyHEX 20 1775 d49a61 "Attempted to ascend heroes." "Failed to ascend heroes."
     else
         printInColor "INFO" "No heroes to ascend."
     fi
-
-    inputTapSleep 70 1810 # Exit
-    wait
-    verifyHEX 20 1775 d49a61 "Attempted to ascend heroes." "Failed to ascend heroes."
 }
 
 # ##############################################################################
@@ -1548,15 +1585,17 @@ twistedRealmBoss() {
         printInColor "INFO" "Unable to fight in the Twisted Realm because it's being calculated." >&2
     else
         # Check for cursed realm screen
-        if testColorOR 750 100 1c2d3e; then
+        if testColorOR 750 100 1e2e3f; then
             inputTapSleep 550 700 2 # Twisted Realm
         fi
 
         printInColor "INFO" "Fighting Twisted Realm Boss ${cCyan}$totalAmountTwistedRealmBossTries${cNc} time(s)."
         until [ "$totalAmountTwistedRealmBossTries" -le 0 ]; do
-            inputTapSleep 550 1850               # Challenge
-            if testColorOR 600 1250 53c6bb; then # Check if notice did popup
-                inputTapSleep 70 1810
+            inputTapSleep 550 1850 # Challenge
+
+            # When no challenges left, a pop-up appears that asks if you want to reset them for 50 diamonds
+            if testColorOR 620 1260 a1eebf; then
+                inputTapSleep 70 1810 # Skip pop-up
                 break
             fi
             inputTapSleep 550 1850 0 # Battle
@@ -1622,6 +1661,9 @@ checkWhereToEnd() {
             inputTapSleep 550 1680 0
         fi
         ;;
+    "closeApp")
+        closeApp
+        ;;
     *)
         printInColor "WARN" "Unknown location to end script on. Ignoring..." >&2
         ;;
@@ -1640,9 +1682,11 @@ collectQuestChests() {
     # WARN: and closed the warning message. Might not be a problem anymore.
     inputTapSleep 960 250 # Quests
     collectQuestChests_quick
+    sleep 4
 
     inputTapSleep 650 1650 # Weeklies
     collectQuestChests_quick
+    sleep 4
 
     #WARN: May break if the reward is a new champ...
     inputTapSleep 930 1650                                     # Campaign
@@ -1665,25 +1709,21 @@ collectQuestChests_quick() {
         inputTapSleep 930 680
     done
 
-    if testColorNAND -d "$DEFAULT_DELTA" 265 450 4b2711 && testColorNAND 295 410 71211e; then # OFF: 4b2711 COLLECTED: 71211e
-        inputTapSleep 330 430                                                                 # Chest 20
-        inputTapSleep 580 600 0                                                               # Collect
-    fi
-    if testColorNAND -d "$DEFAULT_DELTA" 430 450 552813 && testColorNAND 460 410 ad2c27; then # OFF: 552813 COLLECTED: ad2c27
-        inputTapSleep 500 430                                                                 # Chest 40
-        inputTapSleep 580 600 0                                                               # Collect
-    fi
-    if testColorNAND -d "$DEFAULT_DELTA" 595 450 4e2713 && testColorNAND 625 410 8f2d28; then # OFF: 4e2713 COLLECTED: 8f2d28
-        inputTapSleep 660 430                                                                 # Chest 60
-        inputTapSleep 580 600 0                                                               # Collect
-    fi
-    if testColorNAND -d "$DEFAULT_DELTA" 760 450 502611 && testColorNAND 785 410 c21c22; then # OFF: 502611 COLLECTED: c21c22
-        inputTapSleep 830 430                                                                 # Chest 80
-        inputTapSleep 580 600 0                                                               # Collect
-    fi
-    if testColorNAND -d "$DEFAULT_DELTA" 920 450 662611 && testColorNAND 950 410 6e1819; then # OFF: 662611 COLLECTED: 6e1819
-        inputTapSleep 990 430                                                                 # Chest 100
-        inputTapSleep 580 600                                                                 # Collect
+    if testColorNAND -d "$DEFAULT_DELTA" 265 450 4b2711 && testColorNAND 295 410 71211e; then   # OFF: 4b2711 COLLECTED: 71211e
+        inputTapSleep 330 430                                                                   # Chest 20
+        inputTapSleep 580 1850 0                                                                # Collect
+    elif testColorNAND -d "$DEFAULT_DELTA" 430 450 552813 && testColorNAND 460 410 ad2c27; then # OFF: 552813 COLLECTED: ad2c27
+        inputTapSleep 500 430                                                                   # Chest 40
+        inputTapSleep 580 600 0                                                                 # Collect
+    elif testColorNAND -d "$DEFAULT_DELTA" 595 450 4e2713 && testColorNAND 625 410 8f2d28; then # OFF: 4e2713 COLLECTED: 8f2d28
+        inputTapSleep 660 430                                                                   # Chest 60
+        inputTapSleep 580 600 0                                                                 # Collect
+    elif testColorNAND -d "$DEFAULT_DELTA" 760 450 502611 && testColorNAND 785 410 c21c22; then # OFF: 502611 COLLECTED: c21c22
+        inputTapSleep 830 430                                                                   # Chest 80
+        inputTapSleep 580 600 0                                                                 # Collect
+    elif testColorNAND -d "$DEFAULT_DELTA" 920 450 662611 && testColorNAND 950 410 6e1819; then # OFF: 662611 COLLECTED: 6e1819
+        inputTapSleep 990 430                                                                   # Chest 100
+        inputTapSleep 580 600                                                                   # Collect
     fi
 }
 
@@ -1695,61 +1735,56 @@ collectQuestChests_quick() {
 collectMail() {
     if [ "$DEBUG" -ge 4 ]; then printInColor "DEBUG" "collectMail" >&2; fi
     # WARN: May break because "some resources have exceeded their maximum limit"
-    if testColorOR -d "$DEFAULT_DELTA" 1020 580 e51f06; then # Red mark
+    if testColorOR -d "$DEFAULT_DELTA" 1011 569 fd2b1a; then # Red mark
         inputTapSleep 960 630                                # Mail
         inputTapSleep 790 1470                               # Collect all
         inputTapSleep 110 1850                               # Return
         inputTapSleep 110 1850                               # Return
+        verifyHEX 20 1775 d49a61 "Collected Mail." "Failed to collect Mail."
     else
         printInColor "INFO" "No mail to collect."
     fi
-    verifyHEX 20 1775 d49a61 "Collected Mail." "Failed to collect Mail."
 }
 
 # ##############################################################################
 # Function Name : collectMerchants
 # Descripton    : Collects Daily/Weekly/Monthly from the merchants page
-# Remark        : Breaks if a pop-up message shows up
+# Remark        : Breaks if a pop-up message shows up or the merchant ship moves location "drastically"
 # ##############################################################################
 collectMerchants() {
     if [ "$DEBUG" -ge 4 ]; then printInColor "DEBUG" "collectMerchants" >&2; fi
-    inputTapSleep 120 300 3 # Merchants
+    inputTapSleep 120 300 10 # Merchants
     # WARN: Breaks if a pop-up message shows up
-    inputTapSleep 510 1820 # Merchant Ship
+    inputTapSleep 780 1820 2 # Merchant Ship
 
-    if testColorNAND 375 940 0b080a; then # Checks for Special Daily Bundles
-        inputTapSleep 200 1200 1          # Free
-    else
-        inputTapSleep 200 750 1 # Free
-    fi
-    inputTapSleep 550 300 1 # Collect rewards
-
-    if testColorOR -d "$DEFAULT_DELTA" 432 1525 f01d04; then # Check if red mark - Weekly Deals
-        inputTapSleep 370 1620 1                             # Weekly Deals
-        if testColorNAND 375 940 050a0f; then                # Checks for Special Weekly Bundles
-            inputTapSleep 200 1200 1                         # Free
-        else
-            inputTapSleep 200 750 1 # Free
-        fi
+    # Check for "Specials" freebie
+    if testColorOR -d "$DEFAULT_DELTA" 365 740 d10000; then
+        inputTapSleep 210 945 1 # Free
         inputTapSleep 550 300 1 # Collect rewards
     else
-        printInColor "INFO" "No weekly reward to collect."
+        printInColor "INFO" "No 'Specials' reward to collect."
     fi
 
-    if testColorOR -d "$DEFAULT_DELTA" 607 1525 f21e05; then # Check if red mark - Monthly Deals
-        inputTapSleep 545 1620 1                             # Monthly Deals
-        if testColorNAND 375 940 0b080a; then                # Checks for Special Monthly Bundles
-            inputTapSleep 200 1200 1                         # Free
-        else
-            inputTapSleep 200 750 # Free
-        fi
+    # Check for "Daily Deals" freebie
+    inputTapSleep 280 1625 1
+    if testColorOR -d "$DEFAULT_DELTA" 365 515 d20101; then
+        inputTapSleep 210 720 1 # Free
         inputTapSleep 550 300 1 # Collect rewards
     else
-        printInColor "INFO" "No monthly reward to collect."
+        printInColor "INFO" "No 'Daily Deals' reward to collect."
     fi
 
-    inputTapSleep 70 1810 1
-    verifyHEX 20 1775 d49a61 "Collected daily/weekly/monthly offer." "Failed to collect daily/weekly/monthly offer."
+    # Check for "Biweeklies" freebie
+    inputTapSleep 455 1625 1
+    if testColorOR -d "$DEFAULT_DELTA" 365 515 d20101; then
+        inputTapSleep 210 720 1 # Free
+        inputTapSleep 550 300 1 # Collect rewards
+    else
+        printInColor "INFO" "No 'Biweeklies' reward to collect."
+    fi
+
+    inputTapSleep 70 1810 4
+    verifyHEX 20 1775 d49a61 "Attempted to collect merchant freebies." "Failed to collect merchant freebies."
 }
 
 # ##############################################################################
@@ -1784,6 +1819,7 @@ doTest() {
 # ##############################################################################
 tests() {
     printInColor "INFO" "Starting tests... ($(date))"
+
     # doTest 450 1050 ef2118 # Random coords
     # doTest 550 740         # Check for Boss in Campaign
     # doTest 660 520         # Check for Solo Bounties HEX
@@ -1843,6 +1879,11 @@ init() {
     sleep 3
     switchTab "Dark Forest"
     sleep 1
+    # Check for HoE event
+    if testColorOR -d "$DEFAULT_DELTA" 770 1165 c19e3a; then
+        printInColor "INFO" "Heroes of Esperia event detected."
+        eventHoe=true
+    fi
     switchTab "Ranhorn"
     sleep 1
     switchTab "Campaign" true
@@ -1854,7 +1895,7 @@ init() {
     if testColorOR -f 740 205 ffc359; then # Check if game is being updated
         printInColor "INFO" "Game is being updated!" >&2
         if [ "$waitForUpdate" = true ]; then
-            printInColor "INFO" "Waiting for game to finish update..."
+            printInColor "INFO" "Waiting for game to finish update..." >&2
             loopUntilNotRGB 5 740 205 ffc359
             printInColor "DONE" "Game finished updating."
         else
@@ -1868,7 +1909,7 @@ init() {
 # Descripton    : Run the script based on config
 # ##############################################################################
 run() {
-    if [ "$hasEnded" = true ]; then return 0; fi # if the script has restarted we need a way to stop looping at the end.
+    if [ "$hasEnded" = true ]; then return 0; fi # If the script has restarted we need a way to stop looping at the end.
 
     # CAMPAIGN TAB
     switchTab "Campaign"
